@@ -1,0 +1,27 @@
+pipeline {
+    agent{ label 'MAVEN_JDK8' }
+    triggers { cron ('H/15 * * * *') }
+    parameters{
+        string(name: 'MAVEN_GOAL', defaultValue: 'package', description: 'Maven Goal')
+    }
+    stages{
+        stage('vcs') {
+           steps {
+              git url: 'https://github.com/brsekharmarch/game-of-life.git',
+                 branch: 'declarative'            
+           }            
+        }
+        stage('package') {
+           steps {
+               sh "mvn ${params.MAVEN_GOAL}"            
+           }
+        }
+        stage('postbuild') {
+           steps {
+               archiveArtifacts artifacts: '**/target/gameoflife.war',
+                                onlyIfSuccessful: true
+               junit testResults: '**/surefire-reports/TEST-*.xml'
+           }
+        }
+    }
+}
